@@ -9,6 +9,9 @@
 #include <driver/touch_pad.h>
 
 #include "matrix.h"
+#include "app_wifi.h"
+#include "weather.h"
+#include "secret.h"
 
 #define TOUCH_THRESHOLD 500
 
@@ -28,6 +31,20 @@ void app_main() {
     for(touch_pad_t pad = TOUCH_PAD_NUM0; pad <= TOUCH_PAD_NUM4; pad++) {
         touch_pad_config(pad, 0);
     }
+
+    // Wifi
+    uint8_t ssid[32] = WIFI_SSID;
+    uint8_t pass[32] = WIFI_PASSWORD;
+    app_wifi_initialise(ssid, pass);
+    app_wifi_wait_connected();
+
+    // Weather
+    init_weather();
+
+    // Test weather
+    weather_t weather = {0};
+    get_weather(&weather);
+    printf("Weather: %s %f %d\n", weather.weather, weather.temp, weather.humidity);
 
     // test matrix
     while(true) {
@@ -49,5 +66,4 @@ void app_main() {
             }
         }
     }
-
 }
