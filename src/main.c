@@ -7,6 +7,7 @@
 #include <esp_log.h>
 #include <driver/gpio.h>
 #include <driver/touch_pad.h>
+#include <lwip/apps/sntp.h>
 
 #include "matrix.h"
 #include "app_wifi.h"
@@ -37,6 +38,11 @@ void app_main() {
     uint8_t pass[32] = WIFI_PASSWORD;
     app_wifi_initialise(ssid, pass);
     app_wifi_wait_connected();
+
+    // SNTP
+    sntp_setoperatingmode(SNTP_OPMODE_POLL);
+    sntp_setservername(0, "pool.ntp.org");
+    sntp_init();
 
     // Weather
     init_weather();
