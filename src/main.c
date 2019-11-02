@@ -5,6 +5,7 @@
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
 #include <esp_log.h>
+#include <driver/adc.h>
 #include <driver/gpio.h>
 #include <driver/touch_pad.h>
 #include <lwip/apps/sntp.h>
@@ -17,6 +18,7 @@
 #define TOUCH_THRESHOLD 500
 
 const gpio_num_t BEEPER = 33;
+const adc1_channel_t LIGHT_SENSOR_CHANNEL = ADC1_GPIO35_CHANNEL;
 
 void app_main() {
 
@@ -32,6 +34,10 @@ void app_main() {
     for(touch_pad_t pad = TOUCH_PAD_NUM0; pad <= TOUCH_PAD_NUM4; pad++) {
         touch_pad_config(pad, 0);
     }
+
+    // Light sensor
+    adc1_config_width(ADC_WIDTH_BIT_9);
+    adc1_config_channel_atten(LIGHT_SENSOR_CHANNEL, ADC_ATTEN_DB_11);
 
     // Wifi
     uint8_t ssid[32] = WIFI_SSID;
@@ -57,7 +63,7 @@ void app_main() {
         for(int device = 0; device < NUM_MATS; device++) {
             for(int i = 0; i < 8; i++) {
                 for(int j = 0; j < 8; j++) {
-                    send(device, i+1, 1 << j);
+                    mat_send(device, i+1, 1 << j);
                     vTaskDelay(50 / portTICK_PERIOD_MS);
 
                     // Touch
@@ -67,8 +73,12 @@ void app_main() {
                         gpio_set_level(BEEPER, 1);
                     else
                         gpio_set_level(BEEPER, 0);
+
+                    // Light
+                    int val = adc1_get_raw(LIGHT_SENSOR_CHANNEL);
+                    mat_send_all(OP_INTENSITY, 16 - val / 32); // 0~512 => 16~0
                 }
-                send(device, i+1, 0);
+                mat_send(device, i+1, 0);
             }
         }
     }

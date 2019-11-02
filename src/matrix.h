@@ -18,5 +18,5 @@
 #define NUM_MATS 4
 
 void init_matrix();
-void send(int channel, uint8_t op, uint8_t data);
-void send_all(uint8_t op, uint8_t data);
+void mat_send(int channel, uint8_t op, uint8_t data);
+void mat_send_all(uint8_t op, uint8_t data);

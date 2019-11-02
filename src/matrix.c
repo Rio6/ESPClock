@@ -19,11 +19,11 @@ void init_matrix() {
     gpio_set_direction(CS, GPIO_MODE_OUTPUT);
 
     // Init MAX7912
-    send_all(OP_SCANLIMIT, 0x7);
-    send_all(OP_INTENSITY, 0x7);
-    send_all(OP_SHUTDOWN, 0x1);
-    send_all(OP_DECODEMODE, 0);
-    send_all(OP_DISPLAYTEST, 0);
+    mat_send_all(OP_SCANLIMIT, 0x7);
+    mat_send_all(OP_INTENSITY, 0x7);
+    mat_send_all(OP_SHUTDOWN, 0x1);
+    mat_send_all(OP_DECODEMODE, 0);
+    mat_send_all(OP_DISPLAYTEST, 0);
 }
 
 static void send_buff(uint8_t buff[BUFF_SIZE]) {
@@ -47,7 +47,7 @@ static void send_buff(uint8_t buff[BUFF_SIZE]) {
     vTaskDelay(1);
 }
 
-void send(int channel, uint8_t op, uint8_t data) {
+void mat_send(int channel, uint8_t op, uint8_t data) {
     for(int i = 0; i < BUFF_SIZE; i+=2) {
         buff[i] = OP_NOOP;
         buff[i+1] = 0;
@@ -59,7 +59,7 @@ void send(int channel, uint8_t op, uint8_t data) {
     send_buff(buff);
 }
 
-void send_all(uint8_t op, uint8_t data) {
+void mat_send_all(uint8_t op, uint8_t data) {
     for(int i = 0; i < BUFF_SIZE; i+=2) {
         buff[i] = op;
         buff[i+1] = data;
