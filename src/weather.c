@@ -9,7 +9,7 @@
 
 #define WEATHER_URL "http://api.openweathermap.org/data/2.5/weather"
 
-const char *TAG = "WEATHER";
+static const char *TAG = "WEATHER";
 esp_http_client_handle_t client = NULL;
 
 void init_weather() {
@@ -23,7 +23,7 @@ void init_weather() {
 }
 
 void get_weather(weather_t *data) {
-    ESP_ERROR_CHECK(esp_http_client_open(client, 0));
+    esp_http_client_open(client, 0);
 
     if(esp_http_client_fetch_headers(client) <= 0 ||
        esp_http_client_get_status_code(client) != 200) {
@@ -62,5 +62,5 @@ void get_weather(weather_t *data) {
         ESP_LOGW(TAG, "Cannot parse weather data");
     }
 
-    ESP_ERROR_CHECK(esp_http_client_close(client));
+    esp_http_client_close(client);
 }

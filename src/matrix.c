@@ -14,9 +14,9 @@ uint8_t buff[BUFF_SIZE];
 
 void init_matrix() {
     // setup SPI pins
-    gpio_set_direction(MOSI, GPIO_MODE_OUTPUT);
-    gpio_set_direction(CLK, GPIO_MODE_OUTPUT);
-    gpio_set_direction(CS, GPIO_MODE_OUTPUT);
+    ESP_ERROR_CHECK(gpio_set_direction(MOSI, GPIO_MODE_OUTPUT));
+    ESP_ERROR_CHECK(gpio_set_direction(CLK, GPIO_MODE_OUTPUT));
+    ESP_ERROR_CHECK(gpio_set_direction(CS, GPIO_MODE_OUTPUT));
 
     // Init MAX7912
     mat_send_all(OP_SCANLIMIT, 0x7);

@@ -10,7 +10,7 @@
 #ifndef _APP_WIFI_H_
 #define _APP_WIFI_H_
 
-void app_wifi_initialise(uint8_t ssid[32], uint8_t password[64]);
+void app_wifi_initialize(uint8_t ssid[32], uint8_t password[64]);
 void app_wifi_wait_connected();
 
 

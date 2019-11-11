@@ -51,7 +51,7 @@ static esp_err_t event_handler(void *ctx, system_event_t *event)
     return ESP_OK;
 }
 
-void app_wifi_initialise(uint8_t ssid[32], uint8_t password[64])
+void app_wifi_initialize(uint8_t ssid[32], uint8_t password[64])
 {
     esp_err_t ret = nvs_flash_init();
     if (ret == ESP_ERR_NVS_NO_FREE_PAGES || ret == ESP_ERR_NVS_NEW_VERSION_FOUND) {
