@@ -36,16 +36,28 @@ void display_date() {
 void display_weather() {
     led_send_matrix(0, weather_icon(atoi(app_weather.icon)));
 
-    int temp = (int) roundf(app_weather.temp);
-    led_send_matrix(1, font8x8_basic[temp / 10 + '0']);
-    led_send_matrix(2, font8x8_basic[temp % 10 + '0']);
+    int temp = (int) roundf(app_weather.temp) % 100;
+    if(temp > -10) { // display {-,0-9}{0-9}℃
+        // First digit, either number or -
+        if(temp < 0)
+            led_send_matrix(1, font8x8_basic['-']);
+        else
+            led_send_matrix(1, font8x8_basic[abs(temp) / 10 + '0']);
 
-    // Add degree to C
-    uint8_t mat[8];
-    memcpy(mat, font8x8_basic['C'], 8);
-    mat[0] |= 0b10000000;
+        // Second digit
+        led_send_matrix(2, font8x8_basic[abs(temp) % 10 + '0']);
 
-    led_send_matrix(3, mat);
+        // C + °
+        uint8_t mat[8];
+        memcpy(mat, font8x8_basic['C'], 8);
+        mat[0] |= 0b10000000;
+
+        led_send_matrix(3, mat);
+    } else { // display -00
+        led_send_matrix(1, font8x8_basic['-']);
+        led_send_matrix(2, font8x8_basic[abs(temp) / 10 + '0']);
+        led_send_matrix(3, font8x8_basic[abs(temp) % 10 + '0']);
+    }
 }
 
 void display_alarm() {

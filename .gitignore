@@ -1,2 +1,2 @@
 .pio
-src/secret.h
+include/secret.h
