@@ -42,7 +42,7 @@ void task_display() {
 
     // Update LED brightness
     int val = adc1_get_raw(LIGHT_SENSOR_CHANNEL);
-    led_send_all(OP_INTENSITY, 16 - val / 32); // [0, 512] => [16, 0]
+    led_send_all(OP_INTENSITY, 15 - val / 128 * 5); // [0, 512) => {15, 10, 5, 0}
 }
 
 void task_weather_update(void *args) {
