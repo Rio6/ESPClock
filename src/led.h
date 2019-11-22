@@ -17,6 +17,8 @@
 
 #define NUM_MATS 4
 
-void init_matrix();
-void mat_send(int channel, uint8_t op, uint8_t data);
-void mat_send_all(uint8_t op, uint8_t data);
+void led_init();
+void led_send(int channel, uint8_t op, uint8_t data);
+void led_send_all(uint8_t op, uint8_t data);
+void led_set_matrix(int letter, uint8_t mat[8]);
+void led_send_matrix(int channel, uint8_t mat[8]);

@@ -1,6 +1,7 @@
 #include "sdkconfig.h"
 
 #include <stdio.h>
+#include <string.h>
 
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
@@ -14,31 +15,41 @@
 
 #include <lwip/apps/sntp.h>
 
-#include "matrix.h"
+#include "main.h"
+#include "led.h"
 #include "app_wifi.h"
 #include "weather.h"
 #include "secret.h"
+#include "displays.h"
 
 static const char *TAG = "MAIN";
 
 const gpio_num_t BEEPER_PIN = 33;
 const adc1_channel_t LIGHT_SENSOR_CHANNEL = ADC1_GPIO35_CHANNEL;
 
-#define TOUCH_THRESHOLD 800
 #define NUM_TOUCH 4
 const touch_pad_t TOUCH_PADS[NUM_TOUCH] = {TOUCH_PAD_NUM2, TOUCH_PAD_NUM3, TOUCH_PAD_NUM4, TOUCH_PAD_NUM5};
-
-void task_display() {
-}
+const uint16_t TOUCH_THRESHOLD = 800;
 
 weather_t weather = {0};
-void timer_weather_update(void *args) {
-    weather_t weather
+int touched[4] = {0};
+
+void task_display() {
+    display_time();
+
+    // Reset touch pad status
+    memset(touched, 0, sizeof(touched));
+
+    // Update LED brightness
+    int val = adc1_get_raw(LIGHT_SENSOR_CHANNEL);
+    led_send_all(OP_INTENSITY, 16 - val / 32); // [0, 512] => [16, 0]
+}
+
+void task_weather_update(void *args) {
     ESP_LOGI(TAG, "Retrieving weather data");
     get_weather(&weather);
 }
 
-int touched[4] = {0};
 void IRAM_ATTR intr_touched(void* args) {
     //ESP_LOGI(TAG, "Touched %d", touch_pad_get_status());
     uint16_t status = touch_pad_get_status();
@@ -51,10 +62,10 @@ void IRAM_ATTR intr_touched(void* args) {
 }
 
 void app_main() {
-
     // Init stuff
+
     // LED matrix
-    init_matrix();
+    led_init();
 
     // Beeper
     gpio_set_direction(BEEPER_PIN, GPIO_MODE_OUTPUT);
@@ -75,14 +86,14 @@ void app_main() {
     adc1_config_width(ADC_WIDTH_BIT_9);
     adc1_config_channel_atten(LIGHT_SENSOR_CHANNEL, ADC_ATTEN_DB_11);
 
-    // Timer
-    // Weather update timer
-    esp_timer_create_args_t timer_args = {
-        .callback = timer_weather_update,
-        .name = "weather_timer",
+    // Display task
+    esp_timer_create_args_t display_timer_args = {
+        .callback = task_display,
+        .name = "display_timer",
     };
-    esp_timer_handle_t weather_timer;
-    esp_timer_create(&timer_args, &weather_timer);
+    esp_timer_handle_t display_timer;
+    esp_timer_create(&display_timer_args, &display_timer);
+    esp_timer_start_periodic(display_timer, 1000000L);
 
     // Alarm
     // TODO
@@ -102,36 +113,12 @@ void app_main() {
 
     // Weather
     init_weather();
-
-    // Start things
-    // Start display task TODO find out optimal size with uxTaskGetStackHighWaterMark
-    //vTaskCreate(&task_display, "DISPLAY", 2048, NULL, 10, NULL);
-
-    // Weather updater
+    esp_timer_create_args_t weather_timer_args = {
+        .callback = task_weather_update,
+        .name = "weather_timer",
+    };
+    esp_timer_handle_t weather_timer;
+    esp_timer_create(&weather_timer_args, &weather_timer);
     esp_timer_start_periodic(weather_timer, 10 * 60 * 1000000L);
-
-    // test matrix
-    while(true) {
-        for(int device = 0; device < NUM_MATS; device++) {
-            for(int i = 0; i < 8; i++) {
-                for(int j = 0; j < 8; j++) {
-                    mat_send(device, i+1, 1 << j);
-                    vTaskDelay(50 / portTICK_PERIOD_MS);
-
-                    // Touch
-                    //uint16_t touch = 0;
-                    //touch_pad_read(TOUCH_PAD_NUM0, &touch);
-                    //if(touch < TOUCH_THRESHOLD)
-                    //    gpio_set_level(BEEPER_PIN, 1);
-                    //else
-                    //    gpio_set_level(BEEPER_PIN, 0);
-
-                    // Light
-                    int val = adc1_get_raw(LIGHT_SENSOR_CHANNEL);
-                    mat_send_all(OP_INTENSITY, 16 - val / 32); // 0~512 => 16~0
-                }
-                mat_send(device, i+1, 0);
-            }
-        }
-    }
+    task_weather_update(NULL);
 }
