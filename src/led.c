@@ -3,8 +3,6 @@
 #include <esp_log.h>
 #include <driver/touch_pad.h>
 
-#include "font8x8.h"
-
 #include "led.h"
 
 #define MOSI 23
@@ -75,13 +73,7 @@ void led_send_all(uint8_t op, uint8_t data) {
     send_buff(buff);
 }
 
-void led_set_matrix(int letter, uint8_t mat[8]) {
-    for(int i = 0; i < 8; i++) {
-        mat[i] |= font8x8_basic[letter][i];
-    }
-}
-
-void led_send_matrix(int channel, uint8_t mat[8]) {
+void led_send_matrix(int channel, const uint8_t mat[8]) {
     for(int i = 0; i < 8; i++) {
         led_send(channel, i+1, mat[i]);
     }

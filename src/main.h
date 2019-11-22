@@ -2,5 +2,5 @@
 
 #include "weather.h"
 
-extern weather_t weather;
-extern int touched[4];
+extern weather_t app_weather;
+extern int app_touched[4];

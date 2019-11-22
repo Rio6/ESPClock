@@ -31,14 +31,14 @@ const adc1_channel_t LIGHT_SENSOR_CHANNEL = ADC1_GPIO35_CHANNEL;
 const touch_pad_t TOUCH_PADS[NUM_TOUCH] = {TOUCH_PAD_NUM2, TOUCH_PAD_NUM3, TOUCH_PAD_NUM4, TOUCH_PAD_NUM5};
 const uint16_t TOUCH_THRESHOLD = 800;
 
-weather_t weather = {0};
-int touched[4] = {0};
+weather_t app_weather = {0};
+int app_touched[4] = {0};
 
 void task_display() {
-    display_time();
+    display_mode();
 
     // Reset touch pad status
-    memset(touched, 0, sizeof(touched));
+    memset(app_touched, 0, sizeof(app_touched));
 
     // Update LED brightness
     int val = adc1_get_raw(LIGHT_SENSOR_CHANNEL);
@@ -46,8 +46,8 @@ void task_display() {
 }
 
 void task_weather_update(void *args) {
-    ESP_LOGI(TAG, "Retrieving weather data");
-    get_weather(&weather);
+    ESP_LOGI(TAG, "Updating weather");
+    get_weather(&app_weather);
 }
 
 void IRAM_ATTR intr_touched(void* args) {
@@ -55,7 +55,7 @@ void IRAM_ATTR intr_touched(void* args) {
     uint16_t status = touch_pad_get_status();
     for(int i = 0; i < NUM_TOUCH; i++) {
         if((status >> TOUCH_PADS[i]) & 1) {
-            touched[i] = 1;
+            app_touched[i] = 1;
         }
     }
     touch_pad_clear_status();
