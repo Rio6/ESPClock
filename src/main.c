@@ -29,7 +29,6 @@ const adc1_channel_t LIGHT_SENSOR_CHANNEL = ADC1_GPIO35_CHANNEL;
 
 #define NUM_TOUCH 4
 const touch_pad_t TOUCH_PADS[NUM_TOUCH] = {TOUCH_PAD_NUM2, TOUCH_PAD_NUM3, TOUCH_PAD_NUM4, TOUCH_PAD_NUM5};
-const uint16_t TOUCH_THRESHOLD = 800;
 
 weather_t app_weather = {0};
 int app_touched[4] = {0};
@@ -79,7 +78,11 @@ void app_main() {
     touch_pad_set_trigger_mode(TOUCH_TRIGGER_BELOW);
     touch_pad_set_voltage(TOUCH_HVOLT_2V7, TOUCH_LVOLT_0V5, TOUCH_HVOLT_ATTEN_1V);
     for(int i = 0; i < NUM_TOUCH; i++) {
-        touch_pad_config(TOUCH_PADS[i], TOUCH_THRESHOLD);
+        touch_pad_config(TOUCH_PADS[i], 0);
+
+        uint16_t value = 800;
+        touch_pad_read(TOUCH_PADS[i], &value);
+        touch_pad_set_thresh(TOUCH_PADS[i], value * 2 / 3);
     }
     touch_pad_filter_start(10);
     touch_pad_isr_register(intr_touched, NULL);
