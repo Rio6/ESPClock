@@ -63,6 +63,9 @@ void IRAM_ATTR intr_touched(void* args) {
 
 void app_main() {
     // Init stuff
+    // Set timezone
+    setenv("TZ", TIME_ZONE, 1);
+    tzset();
 
     // LED matrix
     led_init();

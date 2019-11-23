@@ -52,10 +52,20 @@ void get_weather(weather_t *data) {
 
     if(parsed > 0) {
         parsed = json_scanf(buff, len,
-                "{main: {temp: %f, humidity: %d},"
-                " wind: {speed: %f},"
-                " clouds: {all: %d}}",
-                &data->temp, &data->humidity, &data->wind, &data->clouds);
+                "{"
+                    "main: {"
+                        "temp: %f,"
+                        "humidity: %d"
+                    "},"
+                    "wind: {speed: %f},"
+                    "clouds: {all: %d},"
+                    "sys: {"
+                        "sunrise: %ld,"
+                        " sunset: %ld"
+                    "}"
+                "}",
+                &data->temp, &data->humidity, &data->wind, &data->clouds, &data->sunrise, &data->sunset);
+        printf("parsed %d", parsed);
     }
 
     if(parsed <= 0) {

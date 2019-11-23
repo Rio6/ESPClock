@@ -7,6 +7,8 @@ typedef struct {
     int humidity;
     float wind;
     int clouds;
+    long sunrise;
+    long sunset;
 } weather_t;
 
 void init_weather();
