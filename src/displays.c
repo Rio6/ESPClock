@@ -14,11 +14,11 @@
 
 display_mode_t display_mode = &display_time;
 
-void display_time() {
+void display_time(uint8_t touched) {
     // Handle touched
-    if(app_touched[0]) {
+    if(touched & 1 << TOUCH_PADS[0]) {
         display_mode = &display_weather;
-    } else if(app_touched[1]) {
+    } else if(touched & 1 << TOUCH_PADS[1]) {
         display_mode = &display_date;
     }
 
@@ -33,11 +33,11 @@ void display_time() {
     led_send_matrix(mat);
 }
 
-void display_date() {
+void display_date(uint8_t touched) {
     // Handle touched
-    if(app_touched[0]) {
+    if(touched & 1 << TOUCH_PADS[0]) {
         display_mode = &display_weather;
-    } else if(app_touched[1]) {
+    } else if(touched & 1 << TOUCH_PADS[1]) {
         display_mode = &display_time;
     }
 
@@ -52,11 +52,11 @@ void display_date() {
     led_send_matrix(mat);
 }
 
-void display_weather() {
+void display_weather(uint8_t touched) {
     // Handle touched
-    if(app_touched[0]) {
+    if(touched & 1 << TOUCH_PADS[0]) {
         display_mode = &display_time;
-    } if(app_touched[1]) {
+    } else if(touched & 1 << TOUCH_PADS[1]) {
         display_mode = &display_weather_gadget;
     }
 
@@ -88,11 +88,11 @@ void display_weather() {
     led_send_matrix(mat);
 }
 
-void display_weather_gadget() {
+void display_weather_gadget(uint8_t touched) {
     // Handle touched
-    if(app_touched[0]) {
+    if(touched & 1 << TOUCH_PADS[0]) {
         display_mode = &display_time;
-    } if(app_touched[1]) {
+    } else if(touched & 1 << TOUCH_PADS[1]) {
         display_mode = &display_weather;
     }
 
@@ -127,5 +127,5 @@ void display_weather_gadget() {
     led_send_matrix(mat);
 }
 
-void display_alarm() {
+void display_alarm(uint8_t touched) {
 }
