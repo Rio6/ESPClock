@@ -10,7 +10,6 @@
 #define CS   22
 
 #define BUFF_SIZE NUM_MATS * 2
-uint8_t buff[BUFF_SIZE];
 
 void led_init() {
     // setup SPI pins
@@ -53,10 +52,7 @@ static void send_buff(uint8_t buff[BUFF_SIZE]) {
 }
 
 void led_send(int channel, uint8_t op, uint8_t data) {
-    for(int i = 0; i < BUFF_SIZE; i+=2) {
-        buff[i] = OP_NOOP;
-        buff[i+1] = 0;
-    }
+    uint8_t buff[BUFF_SIZE] = {0};
 
     buff[channel*2] = op;
     buff[channel*2+1] = data;
@@ -65,6 +61,8 @@ void led_send(int channel, uint8_t op, uint8_t data) {
 }
 
 void led_send_all(uint8_t op, uint8_t data) {
+    uint8_t buff[BUFF_SIZE];
+
     for(int i = 0; i < BUFF_SIZE; i+=2) {
         buff[i] = op;
         buff[i+1] = data;
@@ -73,8 +71,13 @@ void led_send_all(uint8_t op, uint8_t data) {
     send_buff(buff);
 }
 
-void led_send_matrix(int channel, const uint8_t mat[8]) {
+void led_send_matrix(const uint8_t mat[NUM_MATS][8]) {
     for(int i = 0; i < 8; i++) {
-        led_send(channel, i+1, mat[i]);
+        uint8_t buff[BUFF_SIZE];
+        for(int ch = 0; ch < NUM_MATS; ch++) {
+            buff[ch*2] = OP_DIGIT0 + i;
+            buff[ch*2+1] = mat[ch][i];
+        }
+        send_buff(buff);
     }
 }

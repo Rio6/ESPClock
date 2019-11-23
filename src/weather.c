@@ -65,7 +65,6 @@ void get_weather(weather_t *data) {
                     "}"
                 "}",
                 &data->temp, &data->humidity, &data->wind, &data->clouds, &data->sunrise, &data->sunset);
-        printf("parsed %d", parsed);
     }
 
     if(parsed <= 0) {
