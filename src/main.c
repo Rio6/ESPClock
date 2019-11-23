@@ -46,17 +46,13 @@ void task_display() {
         display_mode(touched & ~last_touched); // last_touched used for debouncing
         last_touched = touched;
 
-        // Update LED brightness
-        int val = adc1_get_raw(LIGHT_SENSOR_CHANNEL);
-        led_send_all(OP_INTENSITY, 15 - val / 128 * 5); // [0, 512) => {15, 10, 5, 0}
-
         // Find out next update time
         time_t now = time(NULL);
         int ms_till_minute = (60 - localtime(&now)->tm_sec) * 1000;
 
         // Wait until updated
         TickType_t last_wake = xTaskGetTickCount();
-        touched = ulTaskNotifyTake(pdTRUE, ms_till_minute * portTICK_PERIOD_MS);
+        touched = ulTaskNotifyTake(pdTRUE, ms_till_minute / portTICK_PERIOD_MS);
 
         // Clear debounce bits when it's been too long
         if(xTaskGetTickCount() - last_wake > 100 / portTICK_PERIOD_MS) {
@@ -69,6 +65,11 @@ void task_weather_update(void *args) {
     ESP_LOGI(TAG, "Updating weather");
     get_weather(&app_weather);
     xTaskNotify(display_task_handle, 0, eNoAction);
+}
+
+void task_brightness_update(void *args) {
+    int val = adc1_get_raw(LIGHT_SENSOR_CHANNEL);
+    led_send_all(OP_INTENSITY, 15 - val / 128 * 5); // [0, 512) => {15, 10, 5, 0}
 }
 
 void intr_touched(void* args) {
@@ -107,6 +108,15 @@ void app_main() {
     // Light sensor
     adc1_config_width(ADC_WIDTH_BIT_9);
     adc1_config_channel_atten(LIGHT_SENSOR_CHANNEL, ADC_ATTEN_DB_11);
+
+    // LED brightness updater
+    esp_timer_handle_t brightness_timer;
+    esp_timer_create_args_t brightness_timer_args = {
+        .callback = task_brightness_update,
+        .name = "brightness_timer",
+    };
+    esp_timer_create(&brightness_timer_args, &brightness_timer);
+    esp_timer_start_periodic(brightness_timer, 1000000L);
 
     // Display task TODO find out optimal size with uxTaskGetStackHighWaterMark
     xTaskCreate(&task_display, "DISPLAY", 2048, NULL, 10, &display_task_handle);

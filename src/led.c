@@ -1,5 +1,6 @@
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
+#include <freertos/semphr.h>
 #include <esp_log.h>
 #include <driver/touch_pad.h>
 
@@ -10,6 +11,8 @@
 #define CS   22
 
 #define BUFF_SIZE NUM_MATS * 2
+
+static const char *TAG = "LED";
 
 void led_init() {
     // setup SPI pins
@@ -31,11 +34,20 @@ void led_init() {
 }
 
 static void send_buff(uint8_t buff[BUFF_SIZE]) {
-    if(CONFIG_LOG_DEFAULT_LEVEL >= ESP_LOG_DEBUG) {
-        for(int i = 0; i < BUFF_SIZE; i++) printf("%02x ", buff[i]);
-        printf("\n");
+
+    // Create a semaphore - only one task can send buff at a time
+    static volatile SemaphoreHandle_t sema = NULL;
+    if(!sema) {
+        sema = xSemaphoreCreateMutex();
+        if(!sema) {
+            ESP_LOGE(TAG, "cannot create semaphore");
+            abort();
+        }
     }
 
+    xSemaphoreTake(sema, portMAX_DELAY);
+
+    // Start sending
     gpio_set_level(CS, 0);
     vTaskDelay(1);
 
@@ -47,8 +59,11 @@ static void send_buff(uint8_t buff[BUFF_SIZE]) {
         }
     }
 
+    // Finish sending
     gpio_set_level(CS, 1);
     vTaskDelay(1);
+
+    xSemaphoreGive(sema);
 }
 
 void led_send(int channel, uint8_t op, uint8_t data) {
