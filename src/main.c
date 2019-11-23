@@ -90,19 +90,19 @@ void app_main() {
     gpio_set_direction(BEEPER_PIN, GPIO_MODE_OUTPUT);
 
     // Touch sensor
-    touch_pad_init();
+    ESP_ERROR_CHECK(touch_pad_init());
     touch_pad_set_fsm_mode(TOUCH_FSM_MODE_TIMER);
     touch_pad_set_trigger_mode(TOUCH_TRIGGER_BELOW);
     touch_pad_set_voltage(TOUCH_HVOLT_2V7, TOUCH_LVOLT_0V5, TOUCH_HVOLT_ATTEN_1V);
     for(int i = 0; i < NUM_TOUCH; i++) {
-        touch_pad_config(TOUCH_PADS[i], 0);
+        ESP_ERROR_CHECK(touch_pad_config(TOUCH_PADS[i], 0));
 
         uint16_t value = 800;
         touch_pad_read(TOUCH_PADS[i], &value);
         touch_pad_set_thresh(TOUCH_PADS[i], value * 2 / 3);
     }
-    touch_pad_filter_start(10);
-    touch_pad_isr_register(intr_touched, NULL);
+    ESP_ERROR_CHECK(touch_pad_filter_start(10));
+    ESP_ERROR_CHECK(touch_pad_isr_register(intr_touched, NULL));
     touch_pad_intr_enable();
 
     // Light sensor
@@ -115,7 +115,7 @@ void app_main() {
         .callback = task_brightness_update,
         .name = "brightness_timer",
     };
-    esp_timer_create(&brightness_timer_args, &brightness_timer);
+    ESP_ERROR_CHECK(esp_timer_create(&brightness_timer_args, &brightness_timer));
     esp_timer_start_periodic(brightness_timer, 1000000L);
 
     // Display task TODO find out optimal size with uxTaskGetStackHighWaterMark
@@ -144,7 +144,7 @@ void app_main() {
         .callback = task_weather_update,
         .name = "weather_timer",
     };
-    esp_timer_create(&weather_timer_args, &weather_timer);
+    ESP_ERROR_CHECK(esp_timer_create(&weather_timer_args, &weather_timer));
     esp_timer_start_periodic(weather_timer, 10 * 60 * 1000000L);
     task_weather_update(NULL);
 }

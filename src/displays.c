@@ -12,13 +12,15 @@
 #include "font4x4.h"
 #include "weather_icon.h"
 
+#define TOUCHED(x, touched) touched & 1 << TOUCH_PADS[x]
+
 display_mode_t display_mode = &display_time;
 
 void display_time(uint8_t touched) {
     // Handle touched
-    if(touched & 1 << TOUCH_PADS[0]) {
+    if(TOUCHED(0, touched)) {
         display_mode = &display_weather;
-    } else if(touched & 1 << TOUCH_PADS[1]) {
+    } else if(TOUCHED(1, touched)) {
         display_mode = &display_date;
     }
 
@@ -35,9 +37,9 @@ void display_time(uint8_t touched) {
 
 void display_date(uint8_t touched) {
     // Handle touched
-    if(touched & 1 << TOUCH_PADS[0]) {
+    if(TOUCHED(0, touched)) {
         display_mode = &display_weather;
-    } else if(touched & 1 << TOUCH_PADS[1]) {
+    } else if(TOUCHED(1, touched)) {
         display_mode = &display_time;
     }
 
@@ -59,9 +61,9 @@ void display_date(uint8_t touched) {
 
 void display_weather(uint8_t touched) {
     // Handle touched
-    if(touched & 1 << TOUCH_PADS[0]) {
+    if(TOUCHED(0, touched)) {
         display_mode = &display_time;
-    } else if(touched & 1 << TOUCH_PADS[1]) {
+    } else if(TOUCHED(1, touched)) {
         display_mode = &display_weather_gadget;
     }
 
@@ -95,9 +97,9 @@ void display_weather(uint8_t touched) {
 
 void display_weather_gadget(uint8_t touched) {
     // Handle touched
-    if(touched & 1 << TOUCH_PADS[0]) {
+    if(TOUCHED(0, touched)) {
         display_mode = &display_time;
-    } else if(touched & 1 << TOUCH_PADS[1]) {
+    } else if(TOUCHED(1, touched)) {
         display_mode = &display_weather;
     }
 
