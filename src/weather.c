@@ -50,24 +50,13 @@ void get_weather(weather_t *data) {
                 data->weather, data->icon);
     }
 
-    if(parsed > 0) {
-        parsed = json_scanf(buff, len,
-                "{"
-                    "main: {"
-                        "temp: %f,"
-                        "humidity: %d"
-                    "},"
-                    "wind: {speed: %f},"
-                    "clouds: {all: %d},"
-                    "sys: {"
-                        "sunrise: %ld,"
-                        " sunset: %ld"
-                    "}"
-                "}",
-                &data->temp, &data->humidity, &data->wind, &data->clouds, &data->sunrise, &data->sunset);
-    }
+    // For some reason doing them all at once doesn't work
+    parsed += json_scanf(buff, len, "{main: {temp: %f, humidity: %d}}", &data->temp, &data->humidity);
+    parsed += json_scanf(buff, len, "{wind: {speed: %f}}", &data->wind);
+    parsed += json_scanf(buff, len, "{clouds: {all: %d}}", &data->clouds);
+    parsed += json_scanf(buff, len, "{sys: {sunrise: %ld, sunset: %ld}}", &data->sunrise, &data->sunset);
 
-    if(parsed <= 0) {
+    if(parsed < 8) { // 8 is number of member in weather_t
         ESP_LOGW(TAG, "Cannot parse weather data");
     }
 
