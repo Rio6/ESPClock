@@ -49,6 +49,11 @@ void display_date(uint8_t touched) {
     memcpy(mat[1], font8x8_basic[(local->tm_mon+1) % 10 + '0'], 8);
     memcpy(mat[2], font8x8_basic[local->tm_mday / 10 + '0'], 8);
     memcpy(mat[3], font8x8_basic[local->tm_mday % 10 + '0'], 8);
+
+    // Add a seperator between month and day
+    mat[1][3] |= 0b00000001; mat[1][4] |= 0b00000001;
+    mat[2][3] |= 0b10000000; mat[2][4] |= 0b10000000;
+
     led_send_matrix(mat);
 }
 
