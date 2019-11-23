@@ -1,3 +1,4 @@
+#pragma once
 /**
  * https://github.com/dhepper/font8x8
  *
