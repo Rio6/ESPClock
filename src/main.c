@@ -12,7 +12,6 @@
 #include <nvs_flash.h>
 
 #include <driver/adc.h>
-#include <driver/gpio.h>
 #include <driver/touch_pad.h>
 
 #include <lwip/apps/sntp.h>
@@ -28,38 +27,11 @@
 static const char *TAG = "MAIN";
 
 // pins and channels
-const gpio_num_t BEEPER_PIN = 33;
 const adc1_channel_t LIGHT_SENSOR_CHANNEL = ADC1_GPIO35_CHANNEL;
 const touch_pad_t TOUCH_PADS[NUM_TOUCH] = {TOUCH_PAD_NUM2, TOUCH_PAD_NUM3, TOUCH_PAD_NUM4, TOUCH_PAD_NUM5};
 
 // display task
-TaskHandle_t display_task_handle;
-
-void task_display() {
-    uint8_t touched = 0;
-    uint8_t last_touched = 0;
-
-    while(true) {
-        ESP_LOGD(TAG, "display stack free: %d\n", uxTaskGetStackHighWaterMark(NULL));
-
-        // Display
-        display_mode(touched & ~last_touched); // last_touched used for debouncing
-        last_touched = touched;
-
-        // Find out next update time
-        time_t now = time(NULL);
-        int ms_till_minute = (60 - localtime(&now)->tm_sec) * 1000;
-
-        // Wait until updated
-        TickType_t last_wake = xTaskGetTickCount();
-        touched = ulTaskNotifyTake(pdTRUE, ms_till_minute / portTICK_PERIOD_MS);
-
-        // Clear debounce bits when it's been too long
-        if(xTaskGetTickCount() - last_wake > 20 / portTICK_PERIOD_MS) {
-            last_touched = 0;
-        }
-    }
-}
+TaskHandle_t display_task_handle = NULL;
 
 void task_weather_update(void *args) {
     ESP_LOGI(TAG, "Updating weather");
@@ -72,13 +44,47 @@ void task_brightness_update(void *args) {
     led_send_all(OP_INTENSITY, 15 - val / 128 * 5); // [0, 512) => {15, 10, 5, 0}
 }
 
+void task_display() {
+    uint8_t touched = 0;
+    uint8_t last_touched = 0;
+
+    while(true) {
+        // Stop alarm if it's running
+        if(alarm_stop()) {
+            display_mode(0); // Don't input to display
+        } else {
+            display_mode(touched & ~last_touched); // last_touched used for debouncing
+        }
+        last_touched = touched;
+
+        // Get current time
+        time_t now = time(NULL);
+        struct tm *local = localtime(&now);
+
+        // Trigger alarm
+        if(alarm_check(local))
+            alarm_start();
+
+        // Wait until next minute or updated
+        TickType_t last_wake = xTaskGetTickCount();
+        int ticks_till_minute = (60 - local->tm_sec) * 1000 / portTICK_PERIOD_MS;
+        touched = ulTaskNotifyTake(pdTRUE, ticks_till_minute);
+
+        // Clear debounce bits when it's been too long
+        if(xTaskGetTickCount() - last_wake > 20 / portTICK_PERIOD_MS) {
+            last_touched = 0;
+        }
+
+        ESP_LOGD(TAG, "display stack free: %d", uxTaskGetStackHighWaterMark(NULL));
+    }
+}
+
 void intr_touched(void* args) {
     xTaskNotifyFromISR(display_task_handle, touch_pad_get_status(), eSetValueWithOverwrite, pdFALSE);
     touch_pad_clear_status();
 }
 
 void app_main() {
-    // Init stuff
     // Set timezone
     setenv("TZ", TIME_ZONE, 1);
     tzset();
@@ -94,9 +100,6 @@ void app_main() {
 
     // LED matrix
     ESP_ERROR_CHECK(led_init());
-
-    // Beeper
-    gpio_set_direction(BEEPER_PIN, GPIO_MODE_OUTPUT);
 
     // Touch sensor
     ESP_ERROR_CHECK(touch_pad_init());
@@ -127,11 +130,11 @@ void app_main() {
     ESP_ERROR_CHECK_WITHOUT_ABORT(esp_timer_create(&brightness_timer_args, &brightness_timer));
     esp_timer_start_periodic(brightness_timer, 1000000L);
 
-    // Display task TODO find out optimal size with uxTaskGetStackHighWaterMark
+    // Display task
     xTaskCreate(&task_display, "DISPLAY", 2048, NULL, 10, &display_task_handle);
 
     // Alarm
-    alarm_load();
+    ESP_ERROR_CHECK(alarm_init());
 
     // Wifi
     uint8_t ssid[32] = WIFI_SSID;
