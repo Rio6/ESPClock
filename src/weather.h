@@ -11,5 +11,5 @@ typedef struct {
     long sunset;
 } weather_t;
 
-esp_err_t init_weather();
-esp_err_t get_weather(weather_t*);
+esp_err_t weather_init();
+esp_err_t weather_update(weather_t*);

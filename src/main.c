@@ -63,7 +63,7 @@ void task_display() {
 
 void task_weather_update(void *args) {
     ESP_LOGI(TAG, "Updating weather");
-    get_weather(&app_weather);
+    weather_update(&app_weather);
     xTaskNotify(display_task_handle, 0, eNoAction);
 }
 
@@ -138,7 +138,7 @@ void app_main() {
     sntp_init();
 
     // Weather
-    ESP_ERROR_CHECK_WITHOUT_ABORT(init_weather());
+    ESP_ERROR_CHECK_WITHOUT_ABORT(weather_init());
     esp_timer_handle_t weather_timer;
     esp_timer_create_args_t weather_timer_args = {
         .callback = task_weather_update,

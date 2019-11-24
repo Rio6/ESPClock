@@ -14,7 +14,7 @@
 static const char *TAG = "WEATHER";
 esp_http_client_handle_t client = NULL;
 
-esp_err_t init_weather() {
+esp_err_t weather_init() {
     // Generate query URL
     char url[110];
     sprintf(url, "%s?units=metric&appid=%s&id=%s", WEATHER_URL, WEATHER_API_KEY, WEATHER_CITY_ID);
@@ -29,7 +29,7 @@ esp_err_t init_weather() {
     return client ? ESP_OK : ESP_FAIL;
 }
 
-esp_err_t get_weather(weather_t *data) {
+esp_err_t weather_update(weather_t *data) {
     // Open connection
     ERROR_CHECK_RETURN(esp_http_client_open(client, 0));
 
