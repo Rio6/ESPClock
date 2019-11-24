@@ -84,7 +84,7 @@ void app_main() {
     tzset();
 
     // LED matrix
-    led_init();
+    ESP_ERROR_CHECK(led_init());
 
     // Beeper
     gpio_set_direction(BEEPER_PIN, GPIO_MODE_OUTPUT);
@@ -138,7 +138,7 @@ void app_main() {
     sntp_init();
 
     // Weather
-    init_weather();
+    ESP_ERROR_CHECK_WITHOUT_ABORT(init_weather());
     esp_timer_handle_t weather_timer;
     esp_timer_create_args_t weather_timer_args = {
         .callback = task_weather_update,

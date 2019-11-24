@@ -2,9 +2,11 @@
 #include <freertos/task.h>
 #include <freertos/semphr.h>
 #include <esp_log.h>
+#include <esp_err.h>
 #include <driver/touch_pad.h>
 
 #include "led.h"
+#include "error.h"
 
 #define MOSI 23
 #define CLK  19
@@ -14,11 +16,11 @@
 
 static const char *TAG = "LED";
 
-void led_init() {
+esp_err_t led_init() {
     // setup SPI pins
-    ESP_ERROR_CHECK(gpio_set_direction(MOSI, GPIO_MODE_OUTPUT));
-    ESP_ERROR_CHECK(gpio_set_direction(CLK, GPIO_MODE_OUTPUT));
-    ESP_ERROR_CHECK(gpio_set_direction(CS, GPIO_MODE_OUTPUT));
+    ERROR_CHECK_RETURN(gpio_set_direction(MOSI, GPIO_MODE_OUTPUT));
+    ERROR_CHECK_RETURN(gpio_set_direction(CLK, GPIO_MODE_OUTPUT));
+    ERROR_CHECK_RETURN(gpio_set_direction(CS, GPIO_MODE_OUTPUT));
 
     // Init MAX7912
     led_send_all(OP_SCANLIMIT, 0x7);
@@ -31,6 +33,8 @@ void led_init() {
     for(int i = OP_DIGIT0; i <= OP_DIGIT7; i++) {
         led_send_all(i, 0);
     }
+
+    return ESP_OK;
 }
 
 static void send_buff(uint8_t buff[BUFF_SIZE]) {
@@ -75,6 +79,7 @@ void led_send(int channel, uint8_t op, uint8_t data) {
     send_buff(buff);
 }
 
+// Send same commands to all channels
 void led_send_all(uint8_t op, uint8_t data) {
     uint8_t buff[BUFF_SIZE];
 
@@ -86,6 +91,7 @@ void led_send_all(uint8_t op, uint8_t data) {
     send_buff(buff);
 }
 
+// Send matrix data to all channels at once
 void led_send_matrix(const uint8_t mat[NUM_MATS][8]) {
     for(int i = 0; i < 8; i++) {
         uint8_t buff[BUFF_SIZE];
