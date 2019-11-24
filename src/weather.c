@@ -14,6 +14,8 @@
 static const char *TAG = "WEATHER";
 esp_http_client_handle_t client = NULL;
 
+static weather_t weather = {0};
+
 esp_err_t weather_init() {
     // Generate query URL
     char url[110];
@@ -29,7 +31,7 @@ esp_err_t weather_init() {
     return client ? ESP_OK : ESP_FAIL;
 }
 
-esp_err_t weather_update(weather_t *data) {
+esp_err_t weather_update() {
     // Open connection
     ERROR_CHECK_RETURN(esp_http_client_open(client, 0));
 
@@ -59,14 +61,14 @@ esp_err_t weather_update(weather_t *data) {
     if(json_scanf_array_elem(buff, len, ".weather", 0, &token)) {
         parsed = json_scanf(token.ptr, token.len,
                 "{main: %s, icon: %s}",
-                data->weather, data->icon);
+                weather.weather, weather.icon);
     }
 
     // For some reason doing them all at once doesn't work
-    parsed += json_scanf(buff, len, "{main: {temp: %f, humidity: %d}}", &data->temp, &data->humidity);
-    parsed += json_scanf(buff, len, "{wind: {speed: %f}}", &data->wind);
-    parsed += json_scanf(buff, len, "{clouds: {all: %d}}", &data->clouds);
-    parsed += json_scanf(buff, len, "{sys: {sunrise: %ld, sunset: %ld}}", &data->sunrise, &data->sunset);
+    parsed += json_scanf(buff, len, "{main: {temp: %f, humidity: %d}}", &weather.temp, &weather.humidity);
+    parsed += json_scanf(buff, len, "{wind: {speed: %f}}", &weather.wind);
+    parsed += json_scanf(buff, len, "{clouds: {all: %d}}", &weather.clouds);
+    parsed += json_scanf(buff, len, "{sys: {sunrise: %ld, sunset: %ld}}", &weather.sunrise, &weather.sunset);
 
     if(parsed < 8) { // 8 is number of member in weather_t
         ESP_LOGW(TAG, "Cannot parse weather data");
@@ -74,4 +76,8 @@ esp_err_t weather_update(weather_t *data) {
     }
 
     return ESP_OK;
+}
+
+weather_t *weather_get() {
+    return &weather;
 }

@@ -9,6 +9,7 @@
 
 #include <esp_log.h>
 #include <esp_timer.h>
+#include <nvs_flash.h>
 
 #include <driver/adc.h>
 #include <driver/gpio.h>
@@ -20,6 +21,7 @@
 #include "led.h"
 #include "app_wifi.h"
 #include "weather.h"
+#include "alarm.h"
 #include "secret.h"
 #include "displays.h"
 
@@ -28,9 +30,7 @@ static const char *TAG = "MAIN";
 // pins and channels
 const gpio_num_t BEEPER_PIN = 33;
 const adc1_channel_t LIGHT_SENSOR_CHANNEL = ADC1_GPIO35_CHANNEL;
-
-// extern variables
-weather_t app_weather = {0};
+const touch_pad_t TOUCH_PADS[NUM_TOUCH] = {TOUCH_PAD_NUM2, TOUCH_PAD_NUM3, TOUCH_PAD_NUM4, TOUCH_PAD_NUM5};
 
 // display task
 TaskHandle_t display_task_handle;
@@ -55,7 +55,7 @@ void task_display() {
         touched = ulTaskNotifyTake(pdTRUE, ms_till_minute / portTICK_PERIOD_MS);
 
         // Clear debounce bits when it's been too long
-        if(xTaskGetTickCount() - last_wake > 100 / portTICK_PERIOD_MS) {
+        if(xTaskGetTickCount() - last_wake > 20 / portTICK_PERIOD_MS) {
             last_touched = 0;
         }
     }
@@ -63,7 +63,7 @@ void task_display() {
 
 void task_weather_update(void *args) {
     ESP_LOGI(TAG, "Updating weather");
-    weather_update(&app_weather);
+    weather_update();
     xTaskNotify(display_task_handle, 0, eNoAction);
 }
 
@@ -82,6 +82,15 @@ void app_main() {
     // Set timezone
     setenv("TZ", TIME_ZONE, 1);
     tzset();
+
+    // Setup NVS
+    esp_err_t err = nvs_flash_init();
+    if(err == ESP_ERR_NVS_NO_FREE_PAGES || err == ESP_ERR_NVS_NEW_VERSION_FOUND) {
+        ESP_LOGI(TAG, "Erasing NVS");
+        ESP_ERROR_CHECK(nvs_flash_erase());
+        err = nvs_flash_init();
+    }
+    ESP_ERROR_CHECK(err);
 
     // LED matrix
     ESP_ERROR_CHECK(led_init());
@@ -122,7 +131,7 @@ void app_main() {
     xTaskCreate(&task_display, "DISPLAY", 2048, NULL, 10, &display_task_handle);
 
     // Alarm
-    // TODO
+    alarm_load();
 
     // Wifi
     uint8_t ssid[32] = WIFI_SSID;

@@ -12,4 +12,5 @@ typedef struct {
 } weather_t;
 
 esp_err_t weather_init();
-esp_err_t weather_update(weather_t*);
+esp_err_t weather_update();
+weather_t *weather_get();
