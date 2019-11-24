@@ -115,7 +115,7 @@ void app_main() {
         .callback = task_brightness_update,
         .name = "brightness_timer",
     };
-    ESP_ERROR_CHECK(esp_timer_create(&brightness_timer_args, &brightness_timer));
+    ESP_ERROR_CHECK_WITHOUT_ABORT(esp_timer_create(&brightness_timer_args, &brightness_timer));
     esp_timer_start_periodic(brightness_timer, 1000000L);
 
     // Display task TODO find out optimal size with uxTaskGetStackHighWaterMark
@@ -144,7 +144,7 @@ void app_main() {
         .callback = task_weather_update,
         .name = "weather_timer",
     };
-    ESP_ERROR_CHECK(esp_timer_create(&weather_timer_args, &weather_timer));
+    ESP_ERROR_CHECK_WITHOUT_ABORT(esp_timer_create(&weather_timer_args, &weather_timer));
     esp_timer_start_periodic(weather_timer, 10 * 60 * 1000000L);
     task_weather_update(NULL);
 }
