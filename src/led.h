@@ -21,3 +21,4 @@ esp_err_t led_init();
 void led_send(int channel, uint8_t op, uint8_t data);
 void led_send_all(uint8_t op, uint8_t data);
 void led_send_matrix(const uint8_t mat[NUM_MATS][8]);
+int led_set_shutdown(int);

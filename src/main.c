@@ -25,6 +25,7 @@
 #include "displays.h"
 
 static const char *TAG = "MAIN";
+static int last_active = 0; // used for late night led shutdown
 
 // pins and channels
 const adc1_channel_t LIGHT_SENSOR_CHANNEL = ADC1_GPIO35_CHANNEL;
@@ -40,8 +41,21 @@ void task_weather_update(void *args) {
 }
 
 void task_brightness_update(void *args) {
+    // Get light value
     int val = adc1_get_raw(LIGHT_SENSOR_CHANNEL);
-    led_send_all(OP_INTENSITY, 15 - val / 128 * 5); // [0, 512) => {15, 10, 5, 0}
+
+    // Get current and sunset time
+    time_t now = time(NULL);
+    weather_t *weather = weather_get();
+
+    // Shutdown LED when dark after sunset
+    led_set_shutdown(
+            xTaskGetTickCount() - last_active > 5000 / portTICK_PERIOD_MS
+            && weather->sunset && weather->sunrise
+            && val == 511
+            && (now > weather->sunset || now < weather->sunrise));
+
+    led_send_all(OP_INTENSITY, val < 400 ? 10 : 0);
 }
 
 void task_display() {
@@ -49,12 +63,21 @@ void task_display() {
     uint8_t last_touched = 0;
 
     while(true) {
-        // Stop alarm if it's running
-        if(alarm_stop()) {
-            display_mode(0); // Don't input to display
-        } else {
-            display_mode(touched & ~last_touched); // last_touched used for debouncing
+
+        // Check alarm and led
+        int shut = 0, alarm = 0;
+        if(touched) {
+            // Turn on display (if it's off)
+            shut = led_set_shutdown(0);
+            // Stop alarm (if it's running)
+            alarm = alarm_stop();
         }
+
+        if(shut || alarm) // Don't input to display
+            display_mode(0);
+        else // Display normally
+            display_mode(touched & ~last_touched); // last_touched used for debouncing
+
         last_touched = touched;
 
         // Get current time
@@ -66,12 +89,12 @@ void task_display() {
             alarm_start();
 
         // Wait until next minute or updated
-        TickType_t last_wake = xTaskGetTickCount();
+        last_active = xTaskGetTickCount();
         int ticks_till_minute = (60 - local->tm_sec) * 1000 / portTICK_PERIOD_MS;
         touched = ulTaskNotifyTake(pdTRUE, ticks_till_minute);
 
         // Clear debounce bits when it's been too long
-        if(xTaskGetTickCount() - last_wake > 20 / portTICK_PERIOD_MS) {
+        if(xTaskGetTickCount() - last_active > 20 / portTICK_PERIOD_MS) {
             last_touched = 0;
         }
 

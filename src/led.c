@@ -102,3 +102,14 @@ void led_send_matrix(const uint8_t mat[NUM_MATS][8]) {
         send_buff(buff);
     }
 }
+
+// Return 1 when changed
+int led_set_shutdown(int shutdown) {
+    static int last_shutdown = 1;
+    if(shutdown != last_shutdown) {
+        last_shutdown = shutdown;
+        led_send_all(OP_SHUTDOWN, !shutdown);
+        return 1;
+    }
+    return 0;
+}
