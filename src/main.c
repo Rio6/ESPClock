@@ -64,6 +64,7 @@ void task_display() {
     uint8_t last_touched = 0;
 
     while(true) {
+        TickType_t start_tick = xTaskGetTickCount();
 
         // Check alarm and led
         int shut = 0, alarm = 0;
@@ -72,6 +73,8 @@ void task_display() {
             shut = led_set_shutdown(0);
             // Stop alarm (if it's running)
             alarm = alarm_stop();
+
+            last_active = start_tick;
         }
 
         if(shut || alarm) // Don't input to display
@@ -90,12 +93,11 @@ void task_display() {
             alarm_start();
 
         // Wait until next minute or updated
-        last_active = xTaskGetTickCount();
         int ticks_till_minute = (60 - local->tm_sec) * 1000 / portTICK_PERIOD_MS;
         touched = ulTaskNotifyTake(pdTRUE, ticks_till_minute);
 
         // Clear debounce bits when it's been too long
-        if(xTaskGetTickCount() - last_active > 50 / portTICK_PERIOD_MS) {
+        if(xTaskGetTickCount() - start_tick > 50 / portTICK_PERIOD_MS) {
             last_touched = 0;
         }
 
