@@ -94,7 +94,7 @@ void task_display() {
         touched = ulTaskNotifyTake(pdTRUE, ticks_till_minute);
 
         // Clear debounce bits when it's been too long
-        if(xTaskGetTickCount() - last_active > 20 / portTICK_PERIOD_MS) {
+        if(xTaskGetTickCount() - last_active > 50 / portTICK_PERIOD_MS) {
             last_touched = 0;
         }
 
