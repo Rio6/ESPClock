@@ -49,11 +49,12 @@ void task_brightness_update(void *args) {
     weather_t *weather = weather_get();
 
     // Shutdown LED when dark after sunset
-    led_set_shutdown(
-            xTaskGetTickCount() - last_active > 5000 / portTICK_PERIOD_MS
-            && weather->sunset && weather->sunrise
-            && val == 511
-            && (now > weather->sunset || now < weather->sunrise));
+    if(xTaskGetTickCount() - last_active > 5000 / portTICK_PERIOD_MS) {
+        led_set_shutdown(
+                   weather->sunset && weather->sunrise
+                && val == 511
+                && (now > weather->sunset || now < weather->sunrise));
+    }
 
     led_send_all(OP_INTENSITY, val < 400 ? 10 : 0);
 }
