@@ -16,15 +16,20 @@
 
 // Util macros
 #define TOUCHED(x, touched) touched & 1 << TOUCH_PADS[x]
-#define SWITCH_MODE(touched) \
-    if(TOUCHED(0, touched)) { \
-        display_mode = &display_time; \
-    } else if(TOUCHED(1, touched)) { \
-        display_mode = &display_weather; \
-    } else if(TOUCHED(2, touched)) { \
-        display_mode = &display_alarm; \
-    }
 #define REVERSE_BITS(b) (((b)&1?128:0)|((b)&2?64:0)|((b)&4?32:0)|((b)&8?16:0)|((b)&16?8:0)|((b)&32?4:0)|((b)&64?2:0)|((b)&128?1:0))
+
+int handle_touched(uint8_t touched) {
+    if(TOUCHED(0, touched)) {
+        display_mode = &display_time;
+    } else if(TOUCHED(1, touched)) {
+        display_mode = &display_weather;
+    } else if(TOUCHED(2, touched)) {
+        display_mode = &display_alarm;
+    } else {
+        return 0;
+    }
+    return 1;
+}
 
 display_mode_t display_mode = &display_time;
 
@@ -32,7 +37,7 @@ void display_time(uint8_t touched) {
     // Handle touched
     if(TOUCHED(0, touched)) {
         display_mode = &display_date;
-    } else SWITCH_MODE(touched);
+    } else handle_touched(touched);
 
     time_t now = time(NULL);
     struct tm* local = localtime(&now);
@@ -47,7 +52,7 @@ void display_time(uint8_t touched) {
 
 void display_date(uint8_t touched) {
     // Handle touched
-    SWITCH_MODE(touched);
+    handle_touched(touched);
 
     time_t now = time(NULL);
     struct tm* local = localtime(&now);
@@ -69,7 +74,7 @@ void display_weather(uint8_t touched) {
     // Handle touched
     if(TOUCHED(1, touched)) {
         display_mode = &display_weather_gadget;
-    } else SWITCH_MODE(touched);
+    } else handle_touched(touched);
 
     weather_t *weather = weather_get();
     uint8_t mat[NUM_MATS][8] = {0};
@@ -102,7 +107,7 @@ void display_weather(uint8_t touched) {
 
 void display_weather_gadget(uint8_t touched) {
     // Handle touched
-    SWITCH_MODE(touched);
+    handle_touched(touched);
 
     weather_t *weather = weather_get();
     uint8_t mat[NUM_MATS][8] = {0};
@@ -200,9 +205,11 @@ void display_alarm(uint8_t touched) {
         if(TOUCHED(0, touched)) {
             ctl.index = 0;
             display_mode = &display_time;
+            return;
         } else if(TOUCHED(1, touched)) {
             ctl.index = 0;
             display_mode = &display_weather;
+            return;
 
         // Switch index
         } else if(TOUCHED(2, touched)) {
