@@ -31,6 +31,10 @@ static int last_active = 0; // used for late night led shutdown
 const adc1_channel_t LIGHT_SENSOR_CHANNEL = ADC1_GPIO35_CHANNEL;
 const touch_pad_t TOUCH_PADS[NUM_TOUCH] = {TOUCH_PAD_NUM2, TOUCH_PAD_NUM3, TOUCH_PAD_NUM4, TOUCH_PAD_NUM5};
 
+// other constants
+const int SLEEP_HOUR_START = 21;
+const int SLEEP_HOUR_END = 6;
+
 // display task
 TaskHandle_t display_task_handle = NULL;
 
@@ -46,14 +50,12 @@ void task_brightness_update(void *args) {
 
     // Get current and sunset time
     time_t now = time(NULL);
-    weather_t *weather = weather_get();
+    struct tm *local = localtime(&now);
 
     // Shutdown LED when dark after sunset
     if(xTaskGetTickCount() - last_active > 5000 / portTICK_PERIOD_MS) {
-        led_set_shutdown(
-                   weather->sunset && weather->sunrise
-                && val == 511
-                && (now > weather->sunset || now < weather->sunrise));
+        led_set_shutdown(val == 511
+                && (local->tm_hour >= SLEEP_HOUR_START || local->tm_hour < SLEEP_HOUR_END));
     }
 
     led_send_all(OP_INTENSITY, val < 400 ? 10 : 0);
@@ -64,8 +66,6 @@ void task_display() {
     uint8_t last_touched = 0;
 
     while(true) {
-        TickType_t start_tick = xTaskGetTickCount();
-
         // Check alarm and led
         int shut = 0, alarm = 0;
         if(touched) {
@@ -73,8 +73,6 @@ void task_display() {
             shut = led_set_shutdown(0);
             // Stop alarm (if it's running)
             alarm = alarm_stop();
-
-            last_active = start_tick;
         }
 
         if(shut || alarm) // Don't input to display
@@ -92,12 +90,19 @@ void task_display() {
         if(alarm_check(local))
             alarm_start();
 
+
+        // Update active time
+        TickType_t last_wake_tick = xTaskGetTickCount();
+        if(touched) {
+            last_active = last_wake_tick;
+        }
+
         // Wait until next minute or updated
         int ticks_till_minute = (60 - local->tm_sec) * 1000 / portTICK_PERIOD_MS;
         touched = ulTaskNotifyTake(pdTRUE, ticks_till_minute);
 
         // Clear debounce bits when it's been too long
-        if(xTaskGetTickCount() - start_tick > 50 / portTICK_PERIOD_MS) {
+        if(xTaskGetTickCount() - last_wake_tick > 100 / portTICK_PERIOD_MS) {
             last_touched = 0;
         }
 
