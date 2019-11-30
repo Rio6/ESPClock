@@ -82,6 +82,7 @@ static void alarm_task() {
         vTaskDelay(500 / portTICK_PERIOD_MS);
     }
     ESP_LOGD(TAG, "alarm stack free: %d", uxTaskGetStackHighWaterMark(NULL));
+    alarm_task_handle = NULL;
     vTaskDelete(NULL);
 }
 

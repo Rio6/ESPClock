@@ -45,7 +45,7 @@ esp_err_t weather_update() {
 
     // Get response data
     int len = esp_http_client_get_content_length(client);
-    char *buff = alloca(len);
+    char buff[len];
     len = esp_http_client_read(client, buff, len);
     esp_http_client_close(client);
 
