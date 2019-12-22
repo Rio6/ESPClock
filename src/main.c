@@ -58,7 +58,11 @@ void task_brightness_update(void *args) {
                 && (local->tm_hour >= SLEEP_HOUR_START || local->tm_hour < SLEEP_HOUR_END));
     }
 
-    led_send_all(OP_INTENSITY, val < 400 ? 10 : 0);
+    if(val < 350)
+        led_send_all(OP_INTENSITY, 10);
+    // between 350 and 400 is a transition
+    else if(val > 400)
+        led_send_all(OP_INTENSITY, 0);
 }
 
 void task_display() {
