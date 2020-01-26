@@ -37,6 +37,8 @@ void display_time(uint8_t touched) {
     // Handle touched
     if(TOUCHED(0, touched)) {
         display_mode = &display_date;
+    } else if(TOUCHED(3, touched)) {
+        led_init(); // Reset LED matrix
     } else handle_touched(touched);
 
     time_t now = time(NULL);
