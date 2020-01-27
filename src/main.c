@@ -57,7 +57,7 @@ void task_brightness_update(void *args) {
 
     // Shutdown LED when dark after sunset
     if(xTaskGetTickCount() - last_active > 5000 / portTICK_PERIOD_MS) {
-        led_set_shutdown(val == 511 &&
+        led_set_shutdown(val > 500 &&
                 (local.tm_hour >= SLEEP_HOUR_START
                 || local.tm_hour < risetime.tm_hour
                 || (local.tm_hour == risetime.tm_hour && local.tm_min < risetime.tm_min)));
